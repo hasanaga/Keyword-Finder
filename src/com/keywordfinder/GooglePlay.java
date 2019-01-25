@@ -27,32 +27,17 @@ public class GooglePlay {
 
 	public static void main(String[] args) throws Exception {
 
-
-//		String data = "asa asas asa.sas";
-//		String[] arr1 = data.split("\\.");
-//
-//		System.out.println(arr1.length);
-//		System.exit(23);
-
-
 		keyword = "apk share";
 		showAppSource = false;
 		showSentencesSource = false;
 
-
-		//Connection connection = DatabaseHelper.create();
-		//DatabaseHelper.restoreDbFromFile(connection, "google.db");
-
 		connection = DatabaseHelper.open("google.db");
-		createTables();
 
+		createTables();
 
 		grabApps(keyword);
 
-
 		processingKeyword();
-
-
 	}
 
 
@@ -184,10 +169,6 @@ public class GooglePlay {
 						.add(new Item(4, Item.TYPE.TEXT, description))
 						.add(new Item(5, Item.TYPE.TEXT, searchKeyword)).build());
 
-
-			//System.out.println(description);
-
-
 		}
 		
 		
@@ -231,7 +212,6 @@ public class GooglePlay {
 
 				String data = title + ". " + shortDescription + ".  " + description;
 
-				//data = shortDescription;
 
 				data = data.replace(",", " ");
 				//data = data.replace(".", " ");
@@ -253,7 +233,6 @@ public class GooglePlay {
 				data = data.replace("\n\r", ".");
 				data = data.replace("\n", ".");
 				data = data.replace("&", " ");
-				//data = data.replace("\t", " ");
 				data = data.replace("  ", " ");
 				data = data.replace(" ", " ");
 
@@ -275,10 +254,7 @@ public class GooglePlay {
 
 					for (int i = 1; i < 5; i++) {
 
-
-						//1 defe
-						for (int k = 0; k < words.length; k++) {
-
+					    for (int k = 0; k < words.length; k++) {
 
 							if (k + i > words.length) break;
 
@@ -303,15 +279,10 @@ public class GooglePlay {
 								wordsList.add(wordObject);
 							}
 
-
-
-
 						}
 
-
 					}
-
-
+					
 				}
 
 			}
