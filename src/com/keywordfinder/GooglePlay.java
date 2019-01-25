@@ -44,167 +44,19 @@ public class GooglePlay {
 		//DatabaseHelper.restoreDbFromFile(connection, "google.db");
 
 		connection = DatabaseHelper.open("google.db");
-		createTable();
+		createTables();
 
 
 		grabApps(keyword);
 
 
-		final Set<String> uselessWordSet = new HashSet<>();
-
-		DatabaseHelper.executeSelectQuery(connection, "select * from useless_words", new onQueryListener() {
-
-			@Override
-			public void onQuery(int counter, ResultSet resultSet) throws Exception {
-				String word = resultSet.getString(2);
-				uselessWordSet.add(word);
-			}
-		});
-
-
-		System.out.println("Useless word set size: " + uselessWordSet.size());
-
-
-		final List<Word> wordsList = new ArrayList<>();
-
-
-		DatabaseHelper.executeSelectQuery(connection, "select * from data where search_category = '" + keyword + "'", new onQueryListener() {
-
-			@Override
-			public void onQuery(int counter, ResultSet resultSet) throws Exception {
-
-				int id = resultSet.getInt(1);
-				String title = resultSet.getString(2);
-				String packageid = resultSet.getString(3);
-				String shortDescription = resultSet.getString(4);
-				String description = resultSet.getString(5);
-
-
-				String data = title + ". " + shortDescription + ".  " + description;
-
-				//data = shortDescription;
-
-				data = data.replace(",", " ");
-				//data = data.replace(".", " ");
-				data = data.replace("\"", " ");
-				data = data.replace("(", " ");
-				data = data.replace(")", " ");
-				data = data.replace("*", " ");
-				data = data.replace("-", " ");
-				data = data.replace("?", " ");
-				data = data.replace("\\?", " ");
-				data = data.replace("'", " ");
-				data = data.replace(":", " ");
-				data = data.replace("/", " ");
-				data = data.replace("!", " ");
-				data = data.replace(")", " ");
-				data = data.replace("\t", " ");
-				data = data.replace("–", " ");
-				data = data.replace("-", " ");
-				data = data.replace("\n\r", ".");
-				data = data.replace("\n", ".");
-				data = data.replace("&", " ");
-				//data = data.replace("\t", " ");
-				data = data.replace("  ", " ");
-				data = data.replace(" ", " ");
-
-				data = data.trim();
-
-
-				String[] sentences = data.split("\\.");
-				for (int j = 0; j < sentences.length; j++) {
-
-					String sentence = sentences[j];
-					sentence = sentence.replace("  ", " ");
-					sentence = sentence.replace("  ", " ");
-
-
-					sentence = sentence.trim();
-
-					if (sentence.isEmpty()) continue;
-					String[] words = sentence.split(" ");
-
-					for (int i = 1; i < 5; i++) {
-
-
-						//1 defe
-						for (int k = 0; k < words.length; k++) {
-
-
-							if (k + i > words.length) break;
-
-							String word = "";
-							for (int z = 0; z < i; z++) {
-								word += words[k + z] + " ";
-							}
-
-							word = word.toLowerCase();
-
-							Word wordObject = new Word(word);
-							KeywordSource keywordSource = new KeywordSource(packageid, sentence);
-							wordObject.addSource(keywordSource);
-
-							if (wordsList.contains(wordObject)) {
-
-								wordsList.get(wordsList.indexOf(wordObject)).count++;
-								wordsList.get(wordsList.indexOf(wordObject)).addSource(keywordSource);
-
-							} else {
-
-								wordsList.add(wordObject);
-							}
-
-
-
-
-						}
-
-
-					}
-
-
-				}
-
-			}
-		});
-
-
-		wordsList.sort((o1, o2) -> {
-			return Integer.compare(o2.count, o1.count );
-		});
-
-
-		System.out.print("\n\nFounded keywords: \n");
-
-		for (Word word : wordsList) {
-
-			boolean f = true;
-
-			//f &= word.count > 1;
-			f &= word.wordCount() > 2;
-
-			if (f) {
-				System.out.println(word.count + ":" + word.word.trim() + ":");
-
-				int i=0;
-				for(KeywordSource keywordSource: word.keywordSources){
-
-					i++;
-					String text = "";
-					if(showAppSource) text = keywordSource.packageId + ". \t";
-					if(showSentencesSource) text += keywordSource.sentence;
-
-					if(!text.isEmpty())
-						System.out.println("\t\t" +i+". "+ text);
-				}
-			}
-		}
+		processingKeyword();
 
 
 	}
 
 
-	public static void createTable(){
+	public static void createTables(){
 
 
 		DatabaseHelper.executeQuery(connection, "CREATE TABLE IF NOT EXISTS `data` (" +
@@ -343,64 +195,160 @@ public class GooglePlay {
 		
 	}
 	
-	
-	
-	public static class Word{
-		String word;
-		int count;
-		List<KeywordSource> keywordSources;
 
-		public Word(String word) {
-			this.word = word;
-			this.count = 1;
-			keywordSources = new ArrayList<>();
+
+	private static void processingKeyword(){
+
+		final Set<String> uselessWordSet = new HashSet<>();
+
+		DatabaseHelper.executeSelectQuery(connection, "select * from useless_words", new onQueryListener() {
+
+			@Override
+			public void onQuery(int counter, ResultSet resultSet) throws Exception {
+				String word = resultSet.getString(2);
+				uselessWordSet.add(word);
+			}
+		});
+
+
+		System.out.println("Useless word set size: " + uselessWordSet.size());
+
+
+		final List<Keyword> wordsList = new ArrayList<>();
+
+
+		DatabaseHelper.executeSelectQuery(connection, "select * from data where search_category = '" + keyword + "'", new onQueryListener() {
+
+			@Override
+			public void onQuery(int counter, ResultSet resultSet) throws Exception {
+
+				int id = resultSet.getInt(1);
+				String title = resultSet.getString(2);
+				String packageid = resultSet.getString(3);
+				String shortDescription = resultSet.getString(4);
+				String description = resultSet.getString(5);
+
+
+				String data = title + ". " + shortDescription + ".  " + description;
+
+				//data = shortDescription;
+
+				data = data.replace(",", " ");
+				//data = data.replace(".", " ");
+				data = data.replace("\"", " ");
+				data = data.replace("(", " ");
+				data = data.replace(")", " ");
+				data = data.replace("*", " ");
+				data = data.replace("-", " ");
+				data = data.replace("?", " ");
+				data = data.replace("\\?", " ");
+				data = data.replace("'", " ");
+				data = data.replace(":", " ");
+				data = data.replace("/", " ");
+				data = data.replace("!", " ");
+				data = data.replace(")", " ");
+				data = data.replace("\t", " ");
+				data = data.replace("–", " ");
+				data = data.replace("-", " ");
+				data = data.replace("\n\r", ".");
+				data = data.replace("\n", ".");
+				data = data.replace("&", " ");
+				//data = data.replace("\t", " ");
+				data = data.replace("  ", " ");
+				data = data.replace(" ", " ");
+
+				data = data.trim();
+
+
+				String[] sentences = data.split("\\.");
+				for (int j = 0; j < sentences.length; j++) {
+
+					String sentence = sentences[j];
+					sentence = sentence.replace("  ", " ");
+					sentence = sentence.replace("  ", " ");
+
+
+					sentence = sentence.trim();
+
+					if (sentence.isEmpty()) continue;
+					String[] words = sentence.split(" ");
+
+					for (int i = 1; i < 5; i++) {
+
+
+						//1 defe
+						for (int k = 0; k < words.length; k++) {
+
+
+							if (k + i > words.length) break;
+
+							String word = "";
+							for (int z = 0; z < i; z++) {
+								word += words[k + z] + " ";
+							}
+
+							word = word.toLowerCase();
+
+							Keyword wordObject = new Keyword(word);
+							KeywordSource keywordSource = new KeywordSource(packageid, sentence);
+							wordObject.addSource(keywordSource);
+
+							if (wordsList.contains(wordObject)) {
+
+								wordsList.get(wordsList.indexOf(wordObject)).count++;
+								wordsList.get(wordsList.indexOf(wordObject)).addSource(keywordSource);
+
+							} else {
+
+								wordsList.add(wordObject);
+							}
+
+
+
+
+						}
+
+
+					}
+
+
+				}
+
+			}
+		});
+
+
+		wordsList.sort((o1, o2) -> {
+			return Integer.compare(o2.count, o1.count );
+		});
+
+
+		System.out.print("\n\nFounded keywords: \n");
+
+		for (Keyword word : wordsList) {
+
+			boolean f = true;
+
+			//f &= word.count > 1;
+			f &= word.wordCount() > 2;
+
+			if (f) {
+				System.out.println(word.count + ":" + word.word.trim() + ":");
+
+				int i=0;
+				for(KeywordSource keywordSource: word.keywordSources){
+
+					i++;
+					String text = "";
+					if(showAppSource) text = keywordSource.packageId + ". \t";
+					if(showSentencesSource) text += keywordSource.sentence;
+
+					if(!text.isEmpty())
+						System.out.println("\t\t" +i+". "+ text);
+				}
+			}
 		}
-
-		public void addSource(KeywordSource keywordSource){
-			keywordSources.add(keywordSource);
-		}
-
-
-		public int wordCount(){
-			return  word.trim().split(" ").length;
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + ((word == null) ? 0 : word.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Word other = (Word) obj;
-			if (word == null) {
-				if (other.word != null)
-					return false;
-			} else if (!word.equals(other.word))
-				return false;
-			return true;
-		}
-		
-		
 	}
 
-	public static class KeywordSource{
-		public String packageId;
-		public String sentence;
-
-		public KeywordSource(String packageId, String sentence){
-			this.packageId = packageId;
-			this.sentence = sentence;
-		}
-	}
 	
 }
